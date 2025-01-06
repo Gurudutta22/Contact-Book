@@ -1,173 +1,190 @@
+import tkinter as tk
+from tkinter import ttk, messagebox
+
+
 class Contact:
     def __init__(self, name, phone, email):
         self.name = name
         self.phone = phone
         self.email = email
-        self.next = None  # for linked list implementation
+        self.next = None
+
 
 class ContactBook:
     def __init__(self):
         self.head = None
-        self.contact_count = 0  # Variable to keep track of total contacts
-        
+        self.contact_count = 0
+
     def create_contact(self, name, phone, email):
-        """
-        Create a new contact and add it to the contact book
-        Using sorted linked list implementation - O(n)
-        """
         new_contact = Contact(name, phone, email)
         self.contact_count += 1
-        
-        # If list is empty or new contact should be at start
+
         if self.head is None or self.head.name >= name:
             new_contact.next = self.head
             self.head = new_contact
-            print(f"\nContact created successfully: {name}")
-            return
-            
-        # Find the correct position to insert
+            return True
+
         current = self.head
         while current.next and current.next.name < name:
             current = current.next
-            
+
         new_contact.next = current.next
         current.next = new_contact
-        print(f"\nContact created successfully: {name}")
-        
-    def display_contacts(self):
-        """
-        Display all contacts in sorted order - O(n)
-        """
-        if not self.head:
-            print("\nContact book is empty!")
-            return
-            
-        print("\nContact List:")
-        print("-" * 50)
-        current = self.head
-        while current:
-            print(f"Name: {current.name}")
-            print(f"Phone: {current.phone}")
-            print(f"Email: {current.email}")
-            print("-" * 50)
-            current = current.next
-            
+        return True
+
     def search_contact(self, name):
-        """
-        Search for a contact using binary search concept - O(n)
-        Returns the contact and its previous node if found
-        """
-        if not self.head:
-            return None, None
-            
         current = self.head
-        prev = None
-        
         while current and current.name <= name:
             if current.name == name:
-                return prev, current
-            prev = current
+                return current
             current = current.next
-            
-        return None, None
-        
+        return None
+
     def update_contact(self, name, new_phone=None, new_email=None):
-        """
-        Update contact information - O(n)
-        """
-        _, contact = self.search_contact(name)
-        
+        contact = self.search_contact(name)
         if contact:
             if new_phone:
                 contact.phone = new_phone
             if new_email:
                 contact.email = new_email
-            print(f"\nContact updated successfully: {name}")
-        else:
-            print(f"\nContact not found: {name}")
-            
-    def delete_contact(self, name):
-        """
-        Delete a contact from the book - O(n)
-        """
-        prev, contact = self.search_contact(name)
-        
-        if not contact:
-            print(f"\nContact not found: {name}")
-            return
-            
-        if prev:
-            prev.next = contact.next
-        else:
-            self.head = contact.next
-            
-        self.contact_count -= 1
-        print(f"\nContact deleted successfully: {name}")
-        
-    def get_contact_count(self):
-        """
-        Return total number of contacts - O(1)
-        """
-        return self.contact_count
+            return True
+        return False
 
-def main():
-    contact_book = ContactBook()
-    
-    while True:
-        print("\nContact Book Menu:")
-        print("1. Create Contact")
-        print("2. Display All Contacts")
-        print("3. Search Contact")
-        print("4. Update Contact")
-        print("5. Delete Contact")
-        print("6. Get Contact Count")
-        print("7. Exit")
-        
-        choice = input("\nEnter your choice (1-7): ")
-        
-        if choice == '1':
-            name = input("Enter name: ")
-            phone = input("Enter phone number: ")
-            email = input("Enter email: ")
-            contact_book.create_contact(name, phone, email)
-            
-        elif choice == '2':
-            contact_book.display_contacts()
-            
-        elif choice == '3':
-            name = input("Enter name to search: ")
-            _, contact = contact_book.search_contact(name)
-            if contact:
-                print("\nContact found:")
-                print("-" * 50)
-                print(f"Name: {contact.name}")
-                print(f"Phone: {contact.phone}")
-                print(f"Email: {contact.email}")
-                print("-" * 50)
-            else:
-                print(f"\nContact not found: {name}")
-                
-        elif choice == '4':
-            name = input("Enter name to update: ")
-            new_phone = input("Enter new phone number (press enter to skip): ")
-            new_email = input("Enter new email (press enter to skip): ")
-            contact_book.update_contact(name, new_phone if new_phone else None, 
-                                     new_email if new_email else None)
-                                     
-        elif choice == '5':
-            name = input("Enter name to delete: ")
-            contact_book.delete_contact(name)
-            
-        elif choice == '6':
-            count = contact_book.get_contact_count()
-            print(f"\nTotal contacts: {count}")
-            
-        elif choice == '7':
-            print("\nThank you for using Contact Book!")
-            break
-            
+    def delete_contact(self, name):
+        prev, current = None, self.head
+        while current and current.name <= name:
+            if current.name == name:
+                if prev:
+                    prev.next = current.next
+                else:
+                    self.head = current.next
+                self.contact_count -= 1
+                return True
+            prev, current = current, current.next
+        return False
+
+
+class ContactBookGUI:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Contact Book")
+        self.contact_book = ContactBook()
+
+        self.root.geometry("600x400")
+        self.root.configure(padx=20, pady=20)
+
+        self.create_input_frame()
+        self.create_button_frame()
+        self.create_display_frame()
+
+    def create_input_frame(self):
+        input_frame = ttk.LabelFrame(self.root, text="Contact Information", padding="10")
+        input_frame.grid(row=0, column=0, sticky="nsew", padx=5, pady=5)
+
+        ttk.Label(input_frame, text="Name:").grid(row=0, column=0, sticky="w")
+        self.name_var = tk.StringVar()
+        ttk.Entry(input_frame, textvariable=self.name_var).grid(row=0, column=1, padx=5, pady=2)
+
+        ttk.Label(input_frame, text="Phone:").grid(row=1, column=0, sticky="w")
+        self.phone_var = tk.StringVar()
+        ttk.Entry(input_frame, textvariable=self.phone_var).grid(row=1, column=1, padx=5, pady=2)
+
+        ttk.Label(input_frame, text="Email:").grid(row=2, column=0, sticky="w")
+        self.email_var = tk.StringVar()
+        ttk.Entry(input_frame, textvariable=self.email_var).grid(row=2, column=1, padx=5, pady=2)
+
+    def create_button_frame(self):
+        button_frame = ttk.Frame(self.root)
+        button_frame.grid(row=1, column=0, sticky="ew", pady=10)
+
+        ttk.Button(button_frame, text="Add Contact", command=self.add_contact).grid(row=0, column=0, padx=5)
+        ttk.Button(button_frame, text="Update Contact", command=self.update_contact).grid(row=0, column=1, padx=5)
+        ttk.Button(button_frame, text="Delete Contact", command=self.delete_contact).grid(row=0, column=2, padx=5)
+        ttk.Button(button_frame, text="Search Contact", command=self.search_contact).grid(row=0, column=3, padx=5)
+
+    def create_display_frame(self):
+        display_frame = ttk.LabelFrame(self.root, text="Contacts", padding="10")
+        display_frame.grid(row=2, column=0, sticky="nsew", pady=5)
+
+        self.tree = ttk.Treeview(display_frame, columns=("Name", "Phone", "Email"), show="headings", height=8)
+        self.tree.heading("Name", text="Name")
+        self.tree.heading("Phone", text="Phone")
+        self.tree.heading("Email", text="Email")
+
+        scrollbar = ttk.Scrollbar(display_frame, orient="vertical", command=self.tree.yview)
+        self.tree.configure(yscrollcommand=scrollbar.set)
+
+        self.tree.grid(row=0, column=0, sticky="nsew")
+        scrollbar.grid(row=0, column=1, sticky="ns")
+
+    def add_contact(self):
+        name, phone, email = self.name_var.get(), self.phone_var.get(), self.email_var.get()
+        if not all([name, phone, email]):
+            messagebox.showerror("Error", "All fields are required!")
+            return
+
+        if self.contact_book.create_contact(name, phone, email):
+            messagebox.showinfo("Success", f"Contact '{name}' added successfully!")
+            self.clear_entries()
+            self.refresh_contacts()
+
+    def update_contact(self):
+        name, phone, email = self.name_var.get(), self.phone_var.get(), self.email_var.get()
+        if not name:
+            messagebox.showerror("Error", "Name is required for updating a contact!")
+            return
+
+        if self.contact_book.update_contact(name, new_phone=phone, new_email=email):
+            messagebox.showinfo("Success", f"Contact '{name}' updated successfully!")
+            self.clear_entries()
+            self.refresh_contacts()
         else:
-            print("\nInvalid choice! Please try again.")
+            messagebox.showerror("Error", f"Contact '{name}' not found!")
+
+    def delete_contact(self):
+        name = self.name_var.get()
+        if not name:
+            messagebox.showerror("Error", "Name is required for deleting a contact!")
+            return
+
+        if self.contact_book.delete_contact(name):
+            messagebox.showinfo("Success", f"Contact '{name}' deleted successfully!")
+            self.clear_entries()
+            self.refresh_contacts()
+        else:
+            messagebox.showerror("Error", f"Contact '{name}' not found!")
+
+    def search_contact(self):
+        name = self.name_var.get()
+        if not name:
+            messagebox.showerror("Error", "Please enter a name to search!")
+            return
+
+        contact = self.contact_book.search_contact(name)
+        if contact:
+            self.name_var.set(contact.name)
+            self.phone_var.set(contact.phone)
+            self.email_var.set(contact.email)
+            messagebox.showinfo("Contact Found", f"Name: {contact.name}\nPhone: {contact.phone}\nEmail: {contact.email}")
+        else:
+            messagebox.showerror("Error", f"Contact '{name}' not found!")
+
+    def refresh_contacts(self):
+        for item in self.tree.get_children():
+            self.tree.delete(item)
+
+        current = self.contact_book.head
+        while current:
+            self.tree.insert("", "end", values=(current.name, current.phone, current.email))
+            current = current.next
+
+    def clear_entries(self):
+        self.name_var.set("")
+        self.phone_var.set("")
+        self.email_var.set("")
+
 
 if __name__ == "__main__":
-    main()
+    root = tk.Tk()
+    app = ContactBookGUI(root)
+    root.mainloop()
